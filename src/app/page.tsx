@@ -1,65 +1,182 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Appointment } from '@/types/appointment';
+import { AppointmentCalendar } from '@/components/Calendar/AppointmentCalendar';
+import { AppointmentCard } from '@/components/Calendar/AppointmentCard';
+import { Modal } from '@/components/ui/Modal';
+import { CallInterface } from '@/components/MockCall/CallInterface';
+import { appointmentsApi } from '@/lib/supabase/client';
+import { motion } from 'framer-motion';
 
 export default function Home() {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
+
+  // Load appointments
+  useEffect(() => {
+    loadAppointments();
+
+    // Subscribe to real-time changes
+    const subscription = appointmentsApi.subscribeToChanges(() => {
+      loadAppointments();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const loadAppointments = async () => {
+    try {
+      const data = await appointmentsApi.getAll();
+      setAppointments(data);
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCallClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setIsCallModalOpen(true);
+  };
+
+  const handleUpdateAppointment = async (id: string, updates: Partial<Appointment>) => {
+    try {
+      await appointmentsApi.update(id, updates);
+      await loadAppointments();
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+    }
+  };
+
+  const filteredAppointments = appointments.filter((apt) => {
+    if (filter === 'all') return true;
+    return apt.status === filter;
+  });
+
+  const upcomingAppointments = filteredAppointments
+    .filter((apt) => new Date(apt.appointment_time) >= new Date())
+    .sort((a, b) => new Date(a.appointment_time).getTime() - new Date(b.appointment_time).getTime())
+    .slice(0, 5);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-lg sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Medical Appointment Manager
+              </h1>
+              <p className="text-gray-400 mt-1">AI-Powered Appointment Confirmation System</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-gray-400">Live</span>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar Section */}
+          <div className="lg:col-span-2">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="h-[700px]"
+            >
+              {isLoading ? (
+                <div className="h-full bg-gray-900 rounded-xl border border-gray-800 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-400">Loading appointments...</p>
+                  </div>
+                </div>
+              ) : (
+                <AppointmentCalendar
+                  appointments={appointments}
+                  onSelectAppointment={handleCallClick}
+                />
+              )}
+            </motion.div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Filter */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-gray-900 rounded-xl p-4 border border-gray-800"
+            >
+              <h2 className="text-lg font-semibold text-white mb-3">Filter</h2>
+              <div className="flex gap-2">
+                {(['all', 'pending', 'confirmed'] as const).map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setFilter(status)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${filter === status
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      }`}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Upcoming Appointments */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-gray-900 rounded-xl p-4 border border-gray-800"
+            >
+              <h2 className="text-lg font-semibold text-white mb-4">Upcoming Appointments</h2>
+              <div className="space-y-3 max-h-[560px] overflow-y-auto">
+                {upcomingAppointments.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No upcoming appointments</p>
+                ) : (
+                  upcomingAppointments.map((appointment) => (
+                    <AppointmentCard
+                      key={appointment.id}
+                      appointment={appointment}
+                      onCallClick={handleCallClick}
+                    />
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
         </div>
       </main>
+
+      {/* Call Modal */}
+      <Modal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        title="Mock Call"
+        className="max-w-2xl"
+      >
+        {selectedAppointment && (
+          <CallInterface
+            appointment={selectedAppointment}
+            onClose={() => setIsCallModalOpen(false)}
+            onUpdateAppointment={handleUpdateAppointment}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
