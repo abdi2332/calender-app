@@ -132,13 +132,13 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
-                            <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                                <svg className="w-12 h-12 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                                <svg className="w-7 h-7 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                             </div>
-                            <p className="text-xl font-semibold text-white">{appointment.patient_name}</p>
-                            <p className="text-gray-400 mt-1">Calling...</p>
+                            <p className="text-lg font-semibold text-white">{appointment.patient_name}</p>
+                            <p className="text-gray-400 mt-1 text-sm">Calling...</p>
                         </motion.div>
                     )}
 
@@ -149,14 +149,14 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
-                            <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center relative">
+                            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center relative">
                                 <div className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-20"></div>
-                                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                             </div>
-                            <p className="text-xl font-semibold text-white">{appointment.patient_name}</p>
-                            <p className="text-green-400 mt-1">{formatDuration(duration)}</p>
+                            <p className="text-lg font-semibold text-white">{appointment.patient_name}</p>
+                            <p className="text-green-400 mt-1 text-sm">{formatDuration(duration)}</p>
                         </motion.div>
                     )}
 
@@ -167,13 +167,13 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
-                            <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-700 flex items-center justify-center">
-                                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-700 flex items-center justify-center">
+                                <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
-                            <p className="text-xl font-semibold text-white">Call Ended</p>
-                            <p className="text-gray-400 mt-1">Duration: {formatDuration(duration)}</p>
+                            <p className="text-lg font-semibold text-white">Call Ended</p>
+                            <p className="text-gray-400 mt-1 text-sm">Duration: {formatDuration(duration)}</p>
                         </motion.div>
                     )}
                 </AnimatePresence>
