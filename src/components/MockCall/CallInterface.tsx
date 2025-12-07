@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Appointment } from '@/types/appointment';
 import { ConversationMessage } from '@/types/appointment';
 import { Button } from '@/components/ui/Button';
@@ -8,6 +8,7 @@ import { ConversationDisplay } from './ConversationDisplay';
 import { CallControls } from './CallControls';
 import { motion, AnimatePresence } from 'framer-motion';
 import { mockConversation } from '@/lib/ai/conversation';
+import { textToSpeech, playAudio, VOICE_IDS } from '@/lib/ai/elevenlabs';
 
 interface CallInterfaceProps {
     appointment: Appointment;
@@ -25,6 +26,8 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
     const [messages, setMessages] = useState<ConversationMessage[]>([]);
     const [userInput, setUserInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Start call automatically
     useEffect(() => {
@@ -43,6 +46,54 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
         }
         return () => clearInterval(interval);
     }, [callStatus]);
+
+    // Cleanup audio on unmount
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
+
+    /**
+     * Convert text to speech and play it
+     */
+    const speakMessage = async (text: string) => {
+        try {
+            setIsSpeaking(true);
+
+            // Stop any currently playing audio
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+
+            // Generate speech using ElevenLabs
+            const audioBlob = await textToSpeech(text, VOICE_IDS.rachel);
+
+            if (audioBlob) {
+                const audio = playAudio(audioBlob);
+                audioRef.current = audio;
+
+                // Update speaking state when audio ends
+                audio.addEventListener('ended', () => {
+                    setIsSpeaking(false);
+                });
+
+                audio.addEventListener('error', () => {
+                    setIsSpeaking(false);
+                    console.error('Audio playback failed');
+                });
+            } else {
+                // ElevenLabs not configured, just show text
+                setIsSpeaking(false);
+            }
+        } catch (error) {
+            console.error('Text-to-speech error:', error);
+            setIsSpeaking(false);
+        }
+    };
 
     const startCall = async () => {
         setCallStatus('dialing');
@@ -63,6 +114,9 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
                 };
                 setMessages([aiMessage]);
                 setIsTyping(false);
+
+                // Speak the greeting
+                await speakMessage(response.message);
             }, 1500);
         }, 2000);
     };
@@ -94,6 +148,9 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
 
             setMessages((prev) => [...prev, aiMessage]);
             setIsTyping(false);
+
+            // Speak the AI response
+            await speakMessage(response.message);
 
             // Update appointment if needed
             if (response.update) {
